@@ -16,7 +16,7 @@
   "homepage": "https://github.com/esauvisky/alt-tab-current-monitor#readme",
   "sideEffects": false,
   "scripts": {
-    "build": "tsc",
+    "build": "npm install && tsc",
     "compile-schemas": "glib-compile-schemas schemas",
     "prepare-dist": "mkdir -p dist && cp -r schemas dist/ && cp metadata.json dist/",
     "pack": "npm run build && npm run compile-schemas && npm run prepare-dist && cd dist && zip -r ../alt-tab-current-monitor.zip .",
