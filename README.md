@@ -29,7 +29,7 @@ The extension provides a simple settings dialog where you can choose how to dete
 
 ## License
 
-This extension is licensed under the GPL-3.0 License - see the LICENSE file for details.
+This extension is licensed under the GPL-3.0 License.
 
 ## Author
 

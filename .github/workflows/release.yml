@@ -1,0 +1,56 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - 'v*' # This will trigger the workflow when any tag starting with 'v' is pushed
+
+jobs:
+  build:
+    name: Create Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build extension
+        run: |
+          npm run build
+          mkdir -p dist
+          zip -r "dist/alt-tab-current-monitor@esauvisky.github.io.zip" . -x "node_modules/*" ".git/*" ".github/*" "dist/*"
+
+      - name: Get version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Release ${{ steps.get_version.outputs.VERSION }}
+          draft: false
+          prerelease: false
+          files: |
+            dist/alt-tab-current-monitor@esauvisky.github.io.zip
+          body: |
+            # Alt-Tab Current Monitor v${{ steps.get_version.outputs.VERSION }}
+
+            A GNOME Shell extension that makes Alt+Tab only show windows from the current monitor.
+
+            ## Installation
+
+            1. Download the zip file
+            2. Install using GNOME Extensions app or with the command:
+               ```
+               gnome-extensions install alt-tab-current-monitor@esauvisky.github.io.zip
+               ```
+            3. Restart GNOME Shell (Alt+F2, type 'r', press Enter)
+            4. Enable the extension
