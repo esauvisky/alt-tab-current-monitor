@@ -23,9 +23,9 @@ jobs:
 
       - name: Build extension
         run: |
-          npm run build
+          make pack
           mkdir -p dist
-          zip -r "dist/alt-tab-current-monitor@esauvisky.github.io.zip" . -x "node_modules/*" ".git/*" ".github/*" "dist/*"
+          cp $(NAME).zip "dist/alt-tab-current-monitor@esauvisky.github.io.zip"
 
       - name: Get version from tag
         id: get_version
