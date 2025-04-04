@@ -1,0 +1,10 @@
+{
+    "name": "My TypeScript Extension",
+    "description": "An extension made with TypeScript",
+    "uuid": "my-extension@example.com",
+    "url": "https://github.com/example/my-extension",
+    "settings-schema": "org.gnome.shell.extensions.my-extension",
+    "shell-version": [
+        "45"
+    ]
+}
