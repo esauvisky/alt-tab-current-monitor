@@ -1,10 +1,11 @@
 {
-    "name": "My TypeScript Extension",
-    "description": "An extension made with TypeScript",
-    "uuid": "my-extension@example.com",
-    "url": "https://github.com/example/my-extension",
-    "settings-schema": "org.gnome.shell.extensions.my-extension",
+    "name": "Alt-Tab Current Monitor",
+    "description": "Makes Alt+Tab only show windows from the current monitor. You can choose if 'current monitor' means the one with the mouse pointer or the one with the focused window.",
+    "uuid": "alt-tab-current-monitor@esauvisky.github.io",
+    "url": "https://github.com/esauvisky/alt-tab-current-monitor",
+    "settings-schema": "org.gnome.shell.extensions.alt-tab-current-monitor",
     "shell-version": [
-        "45"
+        "45",
+        "46"
     ]
 }

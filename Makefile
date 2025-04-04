@@ -1,5 +1,5 @@
-NAME=my-extension
-DOMAIN=example.com
+NAME=alt-tab-current-monitor
+DOMAIN=esauvisky.github.io
 
 .PHONY: all pack install clean
 

@@ -3,50 +3,32 @@ import Adw from 'gi://Adw';
 import Gio from 'gi://Gio';
 import { ExtensionPreferences, gettext as _ } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
-export default class GnomeRectanglePreferences extends ExtensionPreferences {
-  _settings?: Gio.Settings
+export default class AltTabCurrentMonitorPreferences extends ExtensionPreferences {
+  private _settings?: Gio.Settings;
 
   fillPreferencesWindow(window: Adw.PreferencesWindow): Promise<void> {
     this._settings = this.getSettings();
 
     const page = new Adw.PreferencesPage({
-      title: _('General'),
-      iconName: 'dialog-information-symbolic',
+      title: _('Settings'),
+      iconName: 'preferences-system-symbolic',
     });
 
-    const animationGroup = new Adw.PreferencesGroup({
-      title: _('Animation'),
-      description: _('Configure move/resize animation'),
+    const monitorGroup = new Adw.PreferencesGroup({
+      title: _('Monitor Selection'),
+      description: _('Configure which monitor is considered "current"'),
     });
-    page.add(animationGroup);
+    page.add(monitorGroup);
 
-    const animationEnabled = new Adw.SwitchRow({
-      title: _('Enabled'),
-      subtitle: _('Wether to animate windows'),
+    const useMouseMonitor = new Adw.SwitchRow({
+      title: _('Use mouse pointer monitor'),
+      subtitle: _('When enabled, the "current monitor" is the one where your mouse pointer is located. When disabled, it\'s the monitor with the focused window.'),
     });
-    animationGroup.add(animationEnabled);
+    monitorGroup.add(useMouseMonitor);
 
-    const paddingGroup = new Adw.PreferencesGroup({
-      title: _('Paddings'),
-      description: _('Configure the padding between windows'),
-    });
-    page.add(paddingGroup);
+    window.add(page);
 
-    const paddingInner = new Adw.SpinRow({
-      title: _('Inner'),
-      subtitle: _('Padding between windows'),
-      adjustment: new Gtk.Adjustment({
-        lower: 0,
-        upper: 1000,
-        stepIncrement: 1
-      })
-    });
-    paddingGroup.add(paddingInner);
-
-    window.add(page)
-
-    this._settings!.bind('animate', animationEnabled, 'active', Gio.SettingsBindFlags.DEFAULT);
-    this._settings!.bind('padding-inner', paddingInner, 'value', Gio.SettingsBindFlags.DEFAULT);
+    this._settings!.bind('use-mouse-monitor', useMouseMonitor, 'active', Gio.SettingsBindFlags.DEFAULT);
 
     return Promise.resolve();
   }

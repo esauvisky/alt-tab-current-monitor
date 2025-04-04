@@ -1,19 +1,19 @@
 {
-  "name": "my-extension",
-  "version": "0.0.0",
-  "description": "A TypeScript GNOME Extension",
+  "name": "alt-tab-current-monitor",
+  "version": "1.0.0",
+  "description": "GNOME Shell extension that makes Alt+Tab only show windows from the current monitor",
   "type": "module",
   "private": true,
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/example/my-extension.git"
+    "url": "git+https://github.com/esauvisky/alt-tab-current-monitor.git"
   },
-  "author": "Álan Crístoffer e Sousa <acristoffers@startmail.com>",
-  "license": "LGPL-3.0-or-later",
+  "author": "Emi Bemol <esauvisky@gmail.com>",
+  "license": "GPL-3.0-or-later",
   "bugs": {
-    "url": "https://github.com/example/my-extension/issues"
+    "url": "https://github.com/esauvisky/alt-tab-current-monitor/issues"
   },
-  "homepage": "https://github.com/example/my-extension#readme",
+  "homepage": "https://github.com/esauvisky/alt-tab-current-monitor#readme",
   "sideEffects": false,
   "devDependencies": {
     "eslint": "^9.23.0",
