@@ -8,11 +8,13 @@ export default class AltTabCurrentMonitorExtension extends Extension {
   private gsettings?: Gio.Settings;
   private originalWindowSwitcherPopupGetWindows: any = null;
   private useMouseMonitor: boolean = false;
-  private settingsChangedId: number | null = null;
+  private currentWorkspaceOnly: boolean = true;
+  private settingsChangedId: number[] = [];
 
   enable() {
     this.gsettings = this.getSettings();
     this.useMouseMonitor = this.gsettings.get_boolean('use-mouse-monitor');
+    this.currentWorkspaceOnly = this.gsettings.get_boolean('current-workspace-only');
 
     // Save original functions
     this.originalWindowSwitcherPopupGetWindows = AltTab.WindowSwitcherPopup.prototype._getWindowList;
@@ -24,21 +26,27 @@ export default class AltTabCurrentMonitorExtension extends Extension {
     // Override WindowSwitcherPopup._getWindowList
     AltTab.WindowSwitcherPopup.prototype._getWindowList = function() {
       const windows = self.originalWindowSwitcherPopupGetWindows.call(this);
-      const currentMonitor = self.getCurrentMonitor();
-      return windows.filter((window: Meta.Window) => window.get_monitor() === currentMonitor);
+      return self.filterWindows(windows);
     };
 
     // Override WindowCyclerPopup._getWindows
     AltTab.WindowCyclerPopup.prototype._getWindows = function() {
       const windows = originalWindowCyclerPopupGetWindows.call(this);
-      const currentMonitor = self.getCurrentMonitor();
-      return windows.filter((window: Meta.Window) => window.get_monitor() === currentMonitor);
+      return self.filterWindows(windows);
     };
 
     // Listen for settings changes
-    this.settingsChangedId = this.gsettings.connect('changed::use-mouse-monitor', () => {
-      this.useMouseMonitor = this.gsettings!.get_boolean('use-mouse-monitor');
-    });
+    this.settingsChangedId.push(
+      this.gsettings.connect('changed::use-mouse-monitor', () => {
+        this.useMouseMonitor = this.gsettings!.get_boolean('use-mouse-monitor');
+      })
+    );
+
+    this.settingsChangedId.push(
+      this.gsettings.connect('changed::current-workspace-only', () => {
+        this.currentWorkspaceOnly = this.gsettings!.get_boolean('current-workspace-only');
+      })
+    );
   }
 
   disable() {
@@ -55,13 +63,29 @@ export default class AltTabCurrentMonitorExtension extends Extension {
     };
     AltTab.WindowCyclerPopup.prototype._getWindows = originalWindowCyclerPopupGetWindows;
 
-    // Disconnect settings signal
-    if (this.settingsChangedId !== null && this.gsettings) {
-      this.gsettings.disconnect(this.settingsChangedId);
-      this.settingsChangedId = null;
+    // Disconnect settings signals
+    if (this.gsettings) {
+      this.settingsChangedId.forEach(id => {
+        this.gsettings!.disconnect(id);
+      });
+      this.settingsChangedId = [];
     }
 
     this.gsettings = undefined;
+  }
+
+  filterWindows(windows: Meta.Window[]): Meta.Window[] {
+    // Filter by monitor
+    const currentMonitor = this.getCurrentMonitor();
+    let filtered = windows.filter(window => window.get_monitor() === currentMonitor);
+
+    // Filter by workspace if enabled
+    if (this.currentWorkspaceOnly) {
+      const activeWorkspace = global.workspace_manager.get_active_workspace();
+      filtered = filtered.filter(window => window.get_workspace() === activeWorkspace);
+    }
+
+    return filtered;
   }
 
   getCurrentMonitor(): number {

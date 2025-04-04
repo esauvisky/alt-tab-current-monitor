@@ -6,5 +6,10 @@
       <summary>Use mouse pointer monitor</summary>
       <description>When enabled, the "current monitor" is the one where your mouse pointer is located. When disabled, it's the monitor with the focused window.</description>
     </key>
+    <key name="current-workspace-only" type="b">
+      <default>true</default>
+      <summary>Current workspace only</summary>
+      <description>When enabled, Alt+Tab will only show windows from the current workspace.</description>
+    </key>
   </schema>
 </schemalist>

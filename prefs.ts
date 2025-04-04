@@ -26,9 +26,22 @@ export default class AltTabCurrentMonitorPreferences extends ExtensionPreference
     });
     monitorGroup.add(useMouseMonitor);
 
+    const workspaceGroup = new Adw.PreferencesGroup({
+      title: _('Workspace Filtering'),
+      description: _('Configure workspace filtering behavior'),
+    });
+    page.add(workspaceGroup);
+
+    const currentWorkspaceOnly = new Adw.SwitchRow({
+      title: _('Current workspace only'),
+      subtitle: _('When enabled, Alt+Tab will only show windows from the current workspace.'),
+    });
+    workspaceGroup.add(currentWorkspaceOnly);
+
     window.add(page);
 
     this._settings!.bind('use-mouse-monitor', useMouseMonitor, 'active', Gio.SettingsBindFlags.DEFAULT);
+    this._settings!.bind('current-workspace-only', currentWorkspaceOnly, 'active', Gio.SettingsBindFlags.DEFAULT);
 
     return Promise.resolve();
   }
