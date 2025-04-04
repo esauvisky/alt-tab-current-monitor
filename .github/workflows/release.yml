@@ -54,6 +54,8 @@ jobs:
       - name: Build extension
         run: |
           npm run clean
+          npm install
+          npm run build
           npm run pack
           mkdir -p dist
           cp alt-tab-current-monitor.zip "dist/alt-tab-current-monitor@esauvisky.github.io.zip"
