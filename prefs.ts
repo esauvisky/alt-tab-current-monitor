@@ -1,13 +1,11 @@
-import Gtk from 'gi://Gtk';
 import Adw from 'gi://Adw';
 import Gio from 'gi://Gio';
 import { ExtensionPreferences, gettext as _ } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
 export default class AltTabCurrentMonitorPreferences extends ExtensionPreferences {
-  private _settings?: Gio.Settings;
-
   fillPreferencesWindow(window: Adw.PreferencesWindow): Promise<void> {
-    this._settings = this.getSettings();
+    // @ts-ignore
+    window._settings = this.getSettings();
 
     const page = new Adw.PreferencesPage({
       title: _('Settings'),
@@ -40,8 +38,10 @@ export default class AltTabCurrentMonitorPreferences extends ExtensionPreference
 
     window.add(page);
 
-    this._settings!.bind('use-mouse-monitor', useMouseMonitor, 'active', Gio.SettingsBindFlags.DEFAULT);
-    this._settings!.bind('current-workspace-only', currentWorkspaceOnly, 'active', Gio.SettingsBindFlags.DEFAULT);
+    // @ts-ignore
+    window._settings.bind('use-mouse-monitor', useMouseMonitor, 'active', Gio.SettingsBindFlags.DEFAULT);
+    // @ts-ignore
+    window._settings.bind('current-workspace-only', currentWorkspaceOnly, 'active', Gio.SettingsBindFlags.DEFAULT);
 
     return Promise.resolve();
   }
