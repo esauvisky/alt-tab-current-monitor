@@ -1,4 +1,15 @@
+# Build artifacts
 gschemas.compiled
 *.zip
 dist
 node_modules
+
+# TypeScript output
+*.js
+*.js.map
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*~

@@ -2,12 +2,38 @@ name: Create Release
 
 on:
   push:
-    tags:
-      - 'v*' # This will trigger the workflow when any tag starting with 'v' is pushed
+    branches:
+      - main
+      - master
+    paths-ignore:
+      - "**.md"
+      - ".gitignore"
 
 jobs:
+  check-commit:
+    runs-on: ubuntu-latest
+    outputs:
+      should-release: ${{ steps.check-commit-msg.outputs.should-release }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+
+      - name: Check commit message
+        id: check-commit-msg
+        run: |
+          COMMIT_MSG=$(git log -1 --pretty=%B)
+          if [[ "$COMMIT_MSG" == *"[publish]"* || "$COMMIT_MSG" == *"[release]"* ]]; then
+            echo "should-release=true" >> $GITHUB_OUTPUT
+          else
+            echo "should-release=false" >> $GITHUB_OUTPUT
+          fi
+
   build:
     name: Create Release
+    needs: check-commit
+    if: needs.check-commit.outputs.should-release == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -16,26 +42,28 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '22'
+          node-version: "22"
 
       - name: Install dependencies
         run: npm ci
 
+      - name: Get version from metadata.json
+        id: get_version
+        run: echo "VERSION=$(node -p "require('./metadata.json').version")" >> $GITHUB_OUTPUT
+
       - name: Build extension
         run: |
-          make pack
+          npm run clean
+          npm run pack
           mkdir -p dist
-          cp $(NAME).zip "dist/alt-tab-current-monitor@esauvisky.github.io.zip"
-
-      - name: Get version from tag
-        id: get_version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+          cp alt-tab-current-monitor.zip "dist/alt-tab-current-monitor@esauvisky.github.io.zip"
 
       - name: Create Release
         id: create_release
         uses: softprops/action-gh-release@v1
         with:
-          name: Release ${{ steps.get_version.outputs.VERSION }}
+          tag_name: v${{ steps.get_version.outputs.VERSION }}
+          name: Release v${{ steps.get_version.outputs.VERSION }}
           draft: false
           prerelease: false
           files: |

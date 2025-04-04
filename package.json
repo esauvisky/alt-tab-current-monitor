@@ -15,6 +15,14 @@
   },
   "homepage": "https://github.com/esauvisky/alt-tab-current-monitor#readme",
   "sideEffects": false,
+  "scripts": {
+    "build": "tsc",
+    "compile-schemas": "glib-compile-schemas schemas",
+    "prepare-dist": "mkdir -p dist && cp -r schemas dist/ && cp metadata.json dist/",
+    "pack": "npm run build && npm run compile-schemas && npm run prepare-dist && cd dist && zip -r ../alt-tab-current-monitor.zip .",
+    "clean": "rm -rf dist node_modules alt-tab-current-monitor.zip",
+    "install-extension": "npm run pack && mkdir -p ~/.local/share/gnome-shell/extensions/alt-tab-current-monitor@esauvisky.github.io && rm -rf ~/.local/share/gnome-shell/extensions/alt-tab-current-monitor@esauvisky.github.io/* && unzip -o alt-tab-current-monitor.zip -d ~/.local/share/gnome-shell/extensions/alt-tab-current-monitor@esauvisky.github.io"
+  },
   "devDependencies": {
     "eslint": "^9.23.0",
     "eslint-plugin-jsdoc": "^50.6.9",
