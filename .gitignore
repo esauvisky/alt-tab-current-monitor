@@ -1,3 +1,4 @@
 gschemas.compiled
 *.zip
 dist
+node_modules
