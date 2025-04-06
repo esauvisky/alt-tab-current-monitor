@@ -16,5 +16,10 @@
       <summary>Keep focus on current monitor when switching workspaces</summary>
       <description>When enabled, switching workspaces will not change focus to windows on other monitors.</description>
     </key>
+    <key name="enable-debugging" type="b">
+      <default>false</default>
+      <summary>Enable debugging logs</summary>
+      <description>When enabled, detailed debugging information will be logged to the journal.</description>
+    </key>
   </schema>
 </schemalist>

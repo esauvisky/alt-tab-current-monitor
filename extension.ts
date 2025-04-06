@@ -14,22 +14,34 @@ export default class AltTabCurrentMonitorExtension extends Extension {
   private useMouseMonitor: boolean = false;
   private currentWorkspaceOnly: boolean = true;
   private preventFocusOnOtherDisplays: boolean = true;
+  private enableDebugging: boolean = false;
   private settingsChangedId: number[] = [];
   private timeoutId: number = 0;
 
   // Original methods we'll override
   private actionMoveWorkspaceOriginal: any = null;
 
+  // Log colors
+  private readonly LOG_PREFIX = '[alt-tab-current-monitor]';
+  private readonly COLOR_INFO = '\x1b[36m'; // Cyan
+  private readonly COLOR_SUCCESS = '\x1b[32m'; // Green
+  private readonly COLOR_WARNING = '\x1b[33m'; // Yellow
+  private readonly COLOR_ERROR = '\x1b[31m'; // Red
+  private readonly COLOR_HIGHLIGHT = '\x1b[35m'; // Magenta
+  private readonly COLOR_RESET = '\x1b[0m';
+
   enable() {
     this.gsettings = this.getSettings();
     this.useMouseMonitor = this.gsettings.get_boolean('use-mouse-monitor');
     this.currentWorkspaceOnly = this.gsettings.get_boolean('current-workspace-only');
     this.preventFocusOnOtherDisplays = this.gsettings.get_boolean('prevent-focus-on-other-displays');
+    this.enableDebugging = this.gsettings.get_boolean('enable-debugging');
 
-    log(`[alt-tab-current-monitor] Extension enabled with settings:`);
-    log(`[alt-tab-current-monitor]   useMouseMonitor: ${this.useMouseMonitor}`);
-    log(`[alt-tab-current-monitor]   currentWorkspaceOnly: ${this.currentWorkspaceOnly}`);
-    log(`[alt-tab-current-monitor]   preventFocusOnOtherDisplays: ${this.preventFocusOnOtherDisplays}`);
+    this.logInfo('Extension enabled with settings:');
+    this.logInfo(`  useMouseMonitor: ${this.useMouseMonitor}`);
+    this.logInfo(`  currentWorkspaceOnly: ${this.currentWorkspaceOnly}`);
+    this.logInfo(`  preventFocusOnOtherDisplays: ${this.preventFocusOnOtherDisplays}`);
+    this.logInfo(`  enableDebugging: ${this.enableDebugging}`);
 
     // Save original functions
     this.originalWindowSwitcherPopupGetWindows = AltTab.WindowSwitcherPopup.prototype._getWindowList;
@@ -54,19 +66,29 @@ export default class AltTabCurrentMonitorExtension extends Extension {
     this.settingsChangedId.push(
       this.gsettings.connect('changed::use-mouse-monitor', () => {
         this.useMouseMonitor = this.gsettings!.get_boolean('use-mouse-monitor');
+        this.logInfo(`Setting changed: useMouseMonitor = ${this.useMouseMonitor}`);
       })
     );
 
     this.settingsChangedId.push(
       this.gsettings.connect('changed::current-workspace-only', () => {
         this.currentWorkspaceOnly = this.gsettings!.get_boolean('current-workspace-only');
+        this.logInfo(`Setting changed: currentWorkspaceOnly = ${this.currentWorkspaceOnly}`);
       })
     );
 
     this.settingsChangedId.push(
       this.gsettings.connect('changed::prevent-focus-on-other-displays', () => {
         this.preventFocusOnOtherDisplays = this.gsettings!.get_boolean('prevent-focus-on-other-displays');
+        this.logInfo(`Setting changed: preventFocusOnOtherDisplays = ${this.preventFocusOnOtherDisplays}`);
         this._setupWorkspaceSwitchHandlers();
+      })
+    );
+
+    this.settingsChangedId.push(
+      this.gsettings.connect('changed::enable-debugging', () => {
+        this.enableDebugging = this.gsettings!.get_boolean('enable-debugging');
+        this.logInfo(`Setting changed: enableDebugging = ${this.enableDebugging}`);
       })
     );
 
@@ -138,16 +160,16 @@ export default class AltTabCurrentMonitorExtension extends Extension {
       }
 
       // Fallback to primary monitor if no window is focused
-      log(`[alt-tab-current-monitor] No focused window, falling back to primary monitor`);
+      this.logWarning('No focused window, falling back to primary monitor');
       return global.display.get_primary_monitor();
     }
   }
 
   private _setupWorkspaceSwitchHandlers(): void {
-    log(`[alt-tab-current-monitor] Setting up workspace switch handlers, preventFocusOnOtherDisplays: ${this.preventFocusOnOtherDisplays}`);
+    this.logInfo(`Setting up workspace switch handlers, preventFocusOnOtherDisplays: ${this.preventFocusOnOtherDisplays}`);
 
     if (!this.preventFocusOnOtherDisplays) {
-      log(`[alt-tab-current-monitor] Feature disabled, not setting up handlers`);
+      this.logWarning('Feature disabled, not setting up handlers');
       return;
     }
 
@@ -156,74 +178,84 @@ export default class AltTabCurrentMonitorExtension extends Extension {
 
     const self = this;
     WindowManager.WindowManager.prototype.actionMoveWorkspace = function(workspace) {
-      log(`[alt-tab-current-monitor] actionMoveWorkspace called`);
+      // Store current state before workspace switch
+      const focusedWindowBefore = global.display.focus_window;
+      const currentMonitor = focusedWindowBefore?.get_monitor() || self.getCurrentMonitor();
+      const isOnAllWorkspaces = focusedWindowBefore?.is_on_all_workspaces() || false;
+      const workspaceIndexBefore = global.workspace_manager.get_active_workspace_index();
+
+      // Log the state before workspace switch
+      self.logHighlight('=== WORKSPACE SWITCH START ===');
+      self.logDebug(`Current monitor: ${currentMonitor}`);
+      self.logDebug(`Current workspace: ${workspaceIndexBefore}`);
+      self.logDebug(`Focused window before: ${focusedWindowBefore ? focusedWindowBefore.get_title() : 'none'}`);
+      self.logDebug(`Focused window monitor: ${focusedWindowBefore ? focusedWindowBefore.get_monitor() : 'none'}`);
+      self.logDebug(`Window on all workspaces: ${isOnAllWorkspaces}`);
+
+      // Temporarily unfocus all windows to prevent GNOME from auto-focusing windows
+      // global.display.unset_input_focus(global.get_current_time());
+
+      // Call the original workspace switching function
       self.actionMoveWorkspaceOriginal.apply(this, arguments);
 
-      // Focus a window on the current monitor after workspace switch
-      self._focusWindowOnCurrentMonitor().catch(error =>
-        console.error('[alt-tab-current-monitor] Error focusing window:', error)
-      );
+      self._tick().then(() => {
+        const workspaceIndexAfter = global.workspace_manager.get_active_workspace_index();
+        const activeWorkspace = global.workspace_manager.get_active_workspace();
+        const focusedWindowAfter = global.display.focus_window;
+
+        // Log the state after workspace switch
+        self.logHighlight('=== WORKSPACE SWITCH COMPLETED ===');
+        self.logDebug(`New workspace: ${workspaceIndexAfter}`);
+        self.logDebug(`Focused window after: ${focusedWindowAfter ? focusedWindowAfter.get_title() : 'none'}`);
+        self.logDebug(`Focused window monitor: ${focusedWindowAfter ? focusedWindowAfter.get_monitor() : 'none'}`);
+
+        // Case 1: If the previously focused window is on all workspaces, keep it focused
+        if (isOnAllWorkspaces && focusedWindowBefore) {
+          self.logSuccess(`Refocusing window that's on all workspaces: ${focusedWindowBefore.get_title()}`);
+          focusedWindowBefore.activate(global.get_current_time());
+          return;
+        }
+
+        // Case 2: Find and focus the most recently used window on the current monitor
+        if (activeWorkspace) {
+          // Get all windows on the current workspace
+          const windows = self._getWindowsForWorkspace(activeWorkspace);
+          self.logDebug(`Total windows on workspace ${workspaceIndexAfter}: ${windows.length}`);
+
+          // Filter windows on the current monitor
+          const windowsOnCurrentMonitor = windows.filter(window =>
+            window.get_monitor() === currentMonitor &&
+            !window.is_skip_taskbar()
+          );
+
+          self.logDebug(`Windows on monitor ${currentMonitor}: ${windowsOnCurrentMonitor.length}`);
+          windowsOnCurrentMonitor.forEach((window, i) => {
+            self.logDebug(`  Window ${i + 1}: ${window.get_title()} (user_time: ${window.get_user_time()})`);
+          });
+
+          // Sort windows by most recently used
+          windowsOnCurrentMonitor.sort((a, b) => b.get_user_time() - a.get_user_time());
+
+          // Focus the most recently used window on the current monitor
+          if (windowsOnCurrentMonitor.length > 0) {
+            const windowToFocus = windowsOnCurrentMonitor[0];
+            self.logSuccess(`Focusing most recently used window: ${windowToFocus.get_title()}`);
+            Main.activateWindow(windowToFocus);
+          } else {
+            // Case 3: No windows on current monitor, ensure nothing is focused
+            self.logWarning(`No windows on monitor ${currentMonitor}, clearing focus`);
+            global.display.unset_input_focus(global.get_current_time());
+          }
+        } else {
+          self.logError(`Couldn't find active workspace, clearing focus`);
+          global.display.unset_input_focus(global.get_current_time());
+        }
+
+        self.logHighlight('=== WORKSPACE SWITCH END ===');
+      });
     };
 
-
-    log(`[alt-tab-current-monitor] Workspace switch handlers set up`);
-  }
-
-
-  /**
-   * Focus a window on the current monitor after workspace switch
-   */
-  private async _focusWindowOnMonitor(currentMonitor: number): Promise<void> {
-    // Wait a tick for the workspace switch to complete
-    await this._tick();
-
-    // Get the focused window
-    const focusedWindow = global.display.focus_window;
-    const focusedWindowInfo = focusedWindow ? focusedWindow.get_title() : 'none';
-    log(`[alt-tab-current-monitor] Focused window: ${focusedWindowInfo} (monitor: ${focusedWindow.get_monitor()})`);
-
-    // If there's no focused window or it's on a different monitor, find a window to focus
-    if (!focusedWindow || focusedWindow.get_monitor() !== currentMonitor) {
-      log(`[alt-tab-current-monitor] Need to find a window to focus on monitor ${currentMonitor}`);
-
-      // Get all windows on the current workspace and monitor
-      const activeWorkspace = global.workspace_manager.get_active_workspace();
-      if (!activeWorkspace) {
-        log(`[alt-tab-current-monitor] Couldn't find active workspace`);
-        return;
-      }
-
-      // Get windows using the same approach as AltTab
-      const windows = this._getWindowsForWorkspace(activeWorkspace);
-      log(`[alt-tab-current-monitor] Total windows on active workspace: ${windows.length}.`);
-
-      const windowsOnCurrentMonitor = windows.filter(window =>
-        window.get_monitor() === currentMonitor &&
-        !window.is_skip_taskbar()
-      );
-
-      log(`[alt-tab-current-monitor] Windows on current monitor ${currentMonitor}: ${windowsOnCurrentMonitor.length}`);
-      windowsOnCurrentMonitor.forEach((window, i) => {
-        log(`[alt-tab-current-monitor]   Window ${i+1}: ${window.get_title()} (user_time: ${window.get_user_time()})`);
-      });
-
-      // Sort windows by most recently used
-      windowsOnCurrentMonitor.sort((a, b) => {
-        return b.get_user_time() - a.get_user_time();
-      });
-
-      // Focus the most recently used window on the current monitor
-      if (windowsOnCurrentMonitor.length > 0) {
-        const windowToFocus = windowsOnCurrentMonitor[0];
-        log(`[alt-tab-current-monitor] Focusing window: ${windowToFocus.get_title()}`);
-        Main.activateWindow(windowToFocus);
-      } else {
-        log(`[alt-tab-current-monitor] No suitable windows found to focus on monitor ${currentMonitor}. unfocusing everything`);
-        Main.activateWindow(null);
-      }
-    } else {
-      log(`[alt-tab-current-monitor] Focused window already on current monitor, no action needed`);
-    }
+    this.logSuccess('Workspace switch handlers set up');
   }
 
   /**
@@ -250,7 +282,7 @@ export default class AltTabCurrentMonitorExtension extends Extension {
 
   /**
    * Wait for the next tick in the event loop
-   * Stolen from https://github.com/christopher-l/focus-follows-workspace/tree/main
+   * Stolen from https://github.com/christopher-l/focus-follows-workspace
    */
   private _tick(): Promise<void> {
     return new Promise((resolve) => {
@@ -270,6 +302,42 @@ export default class AltTabCurrentMonitorExtension extends Extension {
     if (this.timeoutId !== 0) {
       GLib.Source.remove(this.timeoutId);
       this.timeoutId = 0;
+    }
+  }
+
+  private logInfo(message: string): void {
+    if (this.enableDebugging) {
+      log(`${this.LOG_PREFIX} ${this.COLOR_INFO}${message}${this.COLOR_RESET}`);
+    }
+  }
+
+  private logSuccess(message: string): void {
+    if (this.enableDebugging) {
+      log(`${this.LOG_PREFIX} ${this.COLOR_SUCCESS}${message}${this.COLOR_RESET}`);
+    }
+  }
+
+  private logWarning(message: string): void {
+    if (this.enableDebugging) {
+      log(`${this.LOG_PREFIX} ${this.COLOR_WARNING}${message}${this.COLOR_RESET}`);
+    }
+  }
+
+  private logError(message: string): void {
+    if (this.enableDebugging) {
+      log(`${this.LOG_PREFIX} ${this.COLOR_ERROR}${message}${this.COLOR_RESET}`);
+    }
+  }
+
+  private logHighlight(message: string): void {
+    if (this.enableDebugging) {
+      log(`${this.LOG_PREFIX} ${this.COLOR_HIGHLIGHT}${message}${this.COLOR_RESET}`);
+    }
+  }
+
+  private logDebug(message: string): void {
+    if (this.enableDebugging) {
+      log(`${this.LOG_PREFIX} ${message}`);
     }
   }
 }

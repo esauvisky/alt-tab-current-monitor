@@ -42,6 +42,19 @@ export default class AltTabCurrentMonitorPreferences extends ExtensionPreference
     });
     workspaceGroup.add(preventFocusOnOtherDisplays);
 
+    // Add debugging group
+    const debuggingGroup = new Adw.PreferencesGroup({
+      title: _('Debugging'),
+      description: _('Advanced options for troubleshooting'),
+    });
+    page.add(debuggingGroup);
+
+    const enableDebugging = new Adw.SwitchRow({
+      title: _('Enable debugging logs'),
+      subtitle: _('When enabled, detailed debugging information will be logged to the journal. Use `journalctl -f -o cat /usr/bin/gnome-shell` to view logs.'),
+    });
+    debuggingGroup.add(enableDebugging);
+
     window.add(page);
 
     // @ts-ignore
@@ -50,6 +63,8 @@ export default class AltTabCurrentMonitorPreferences extends ExtensionPreference
     window._settings.bind('current-workspace-only', currentWorkspaceOnly, 'active', Gio.SettingsBindFlags.DEFAULT);
     // @ts-ignore
     window._settings.bind('prevent-focus-on-other-displays', preventFocusOnOtherDisplays, 'active', Gio.SettingsBindFlags.DEFAULT);
+    // @ts-ignore
+    window._settings.bind('enable-debugging', enableDebugging, 'active', Gio.SettingsBindFlags.DEFAULT);
 
     return Promise.resolve();
   }
