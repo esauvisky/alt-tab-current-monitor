@@ -4,7 +4,7 @@
     "uuid": "alt-tab-current-monitor@esauvisky.github.io",
     "url": "https://github.com/esauvisky/alt-tab-current-monitor",
     "settings-schema": "org.gnome.shell.extensions.alt-tab-current-monitor",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "shell-version": [
         "46",
         "47",
