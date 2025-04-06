@@ -24,23 +24,23 @@ export default class AltTabCurrentMonitorPreferences extends ExtensionPreference
     });
     monitorGroup.add(useMouseMonitor);
 
-    const workspaceGroup = new Adw.PreferencesGroup({
-      title: _('Workspace Filtering'),
-      description: _('Configure workspace filtering behavior'),
+    const behaviorGroup = new Adw.PreferencesGroup({
+      title: _('Window Behavior'),
+      description: _('Configure how windows behave across workspaces and monitors. If focus is jumping unexpectedly between monitors, try adjusting these settings.'),
     });
-    page.add(workspaceGroup);
+    page.add(behaviorGroup);
 
     const currentWorkspaceOnly = new Adw.SwitchRow({
       title: _('Current workspace only'),
       subtitle: _('When enabled, Alt+Tab will only show windows from the current workspace.'),
     });
-    workspaceGroup.add(currentWorkspaceOnly);
+    behaviorGroup.add(currentWorkspaceOnly);
 
     const preventFocusOnOtherDisplays = new Adw.SwitchRow({
       title: _('Keep focus on current monitor when switching workspaces'),
       subtitle: _('When enabled, switching workspaces will not change focus to windows on other monitors.'),
     });
-    workspaceGroup.add(preventFocusOnOtherDisplays);
+    behaviorGroup.add(preventFocusOnOtherDisplays);
 
     // Add debugging group
     const debuggingGroup = new Adw.PreferencesGroup({
