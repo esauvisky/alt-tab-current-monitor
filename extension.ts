@@ -11,8 +11,7 @@ export default class AltTabCurrentMonitorExtension extends Extension {
   private gsettings?: Gio.Settings;
   private originalWindowSwitcherPopupGetWindows: any = null;
   private originalWindowCyclerPopupGetWindows: any = null;
-  private useMouseMonitor: boolean = false;
-  private currentWorkspaceOnly: boolean = true;
+  private useMouseMonitor: boolean = true;
   private preventFocusOnOtherDisplays: boolean = true;
   private enableDebugging: boolean = false;
   private settingsChangedId: number[] = [];
@@ -33,13 +32,11 @@ export default class AltTabCurrentMonitorExtension extends Extension {
   enable() {
     this.gsettings = this.getSettings();
     this.useMouseMonitor = this.gsettings.get_boolean('use-mouse-monitor');
-    this.currentWorkspaceOnly = this.gsettings.get_boolean('current-workspace-only');
     this.preventFocusOnOtherDisplays = this.gsettings.get_boolean('prevent-focus-on-other-displays');
     this.enableDebugging = this.gsettings.get_boolean('enable-debugging');
 
     this.logInfo('Extension enabled with settings:');
     this.logInfo(`  useMouseMonitor: ${this.useMouseMonitor}`);
-    this.logInfo(`  currentWorkspaceOnly: ${this.currentWorkspaceOnly}`);
     this.logInfo(`  preventFocusOnOtherDisplays: ${this.preventFocusOnOtherDisplays}`);
     this.logInfo(`  enableDebugging: ${this.enableDebugging}`);
 
@@ -70,12 +67,6 @@ export default class AltTabCurrentMonitorExtension extends Extension {
       })
     );
 
-    this.settingsChangedId.push(
-      this.gsettings.connect('changed::current-workspace-only', () => {
-        this.currentWorkspaceOnly = this.gsettings!.get_boolean('current-workspace-only');
-        this.logInfo(`Setting changed: currentWorkspaceOnly = ${this.currentWorkspaceOnly}`);
-      })
-    );
 
     this.settingsChangedId.push(
       this.gsettings.connect('changed::prevent-focus-on-other-displays', () => {
@@ -136,11 +127,9 @@ export default class AltTabCurrentMonitorExtension extends Extension {
     const currentMonitor = this.getCurrentMonitor();
     let filtered = windows.filter(window => window.get_monitor() === currentMonitor);
 
-    // Filter by workspace if enabled
-    if (this.currentWorkspaceOnly) {
-      const activeWorkspace = global.workspace_manager.get_active_workspace();
-      filtered = filtered.filter(window => window.get_workspace() === activeWorkspace);
-    }
+    // Always filter by workspace
+    const activeWorkspace = global.workspace_manager.get_active_workspace();
+    filtered = filtered.filter(window => window.get_workspace() === activeWorkspace);
 
     return filtered;
   }
@@ -169,7 +158,7 @@ export default class AltTabCurrentMonitorExtension extends Extension {
     this.logInfo(`Setting up workspace switch handlers, preventFocusOnOtherDisplays: ${this.preventFocusOnOtherDisplays}`);
 
     if (!this.preventFocusOnOtherDisplays) {
-      this.logWarning('Feature disabled, not setting up handlers');
+      this.logInfo('Feature disabled, not setting up handlers');
       return;
     }
 
@@ -287,7 +276,7 @@ export default class AltTabCurrentMonitorExtension extends Extension {
   private _tick(): Promise<void> {
     return new Promise((resolve) => {
       this._clearTimeout();
-      this.timeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 0, () => {
+      this.timeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 5, () => {
         this.timeoutId = 0;
         resolve();
         return GLib.SOURCE_REMOVE;
@@ -338,15 +327,11 @@ export default class AltTabCurrentMonitorExtension extends Extension {
   }
 
   private logWarning(message: string): void {
-    if (this.enableDebugging) {
-      log(`${this.LOG_PREFIX} ${this.COLOR_WARNING}${message}${this.COLOR_RESET}`);
-    }
+    log(`${this.LOG_PREFIX} ${this.COLOR_WARNING}${message}${this.COLOR_RESET}`);
   }
 
   private logError(message: string): void {
-    if (this.enableDebugging) {
-      log(`${this.LOG_PREFIX} ${this.COLOR_ERROR}${message}${this.COLOR_RESET}`);
-    }
+    log(`${this.LOG_PREFIX} ${this.COLOR_ERROR}${message}${this.COLOR_RESET}`);
   }
 
   private logHighlight(message: string): void {

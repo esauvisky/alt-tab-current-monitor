@@ -30,11 +30,6 @@ export default class AltTabCurrentMonitorPreferences extends ExtensionPreference
     });
     page.add(behaviorGroup);
 
-    const currentWorkspaceOnly = new Adw.SwitchRow({
-      title: _('Current workspace only'),
-      subtitle: _('When enabled, Alt+Tab will only show windows from the current workspace.'),
-    });
-    behaviorGroup.add(currentWorkspaceOnly);
 
     const preventFocusOnOtherDisplays = new Adw.SwitchRow({
       title: _('Keep focus on current monitor when switching workspaces'),
@@ -59,8 +54,6 @@ export default class AltTabCurrentMonitorPreferences extends ExtensionPreference
 
     // @ts-ignore
     window._settings.bind('use-mouse-monitor', useMouseMonitor, 'active', Gio.SettingsBindFlags.DEFAULT);
-    // @ts-ignore
-    window._settings.bind('current-workspace-only', currentWorkspaceOnly, 'active', Gio.SettingsBindFlags.DEFAULT);
     // @ts-ignore
     window._settings.bind('prevent-focus-on-other-displays', preventFocusOnOtherDisplays, 'active', Gio.SettingsBindFlags.DEFAULT);
     // @ts-ignore
