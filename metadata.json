@@ -1,10 +1,10 @@
 {
     "name": "Alt-Tab Current Monitor",
-    "description": "Makes Alt+Tab only show windows from the current monitor. You can choose if 'current monitor' means the one with the mouse pointer or the one with the focused window.",
+    "description": "Makes Alt+Tab only show windows from the current monitor. 'Current monitor' can be either the one with the mouse pointer or the focused window.",
     "uuid": "alt-tab-current-monitor@esauvisky.github.io",
     "url": "https://github.com/esauvisky/alt-tab-current-monitor",
     "settings-schema": "org.gnome.shell.extensions.alt-tab-current-monitor",
-    "version": "1.2.4",
+    "version": "2.0.0",
     "shell-version": [
         "46",
         "47",
