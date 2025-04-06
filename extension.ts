@@ -305,8 +305,24 @@ export default class AltTabCurrentMonitorExtension extends Extension {
     }
   }
 
+  /**
+   * More robust method to clear focus from all windows
+   */
   private _clearFocus(): void {
-    global.display.unset_input_focus(0);
+    try {
+      // First try the standard approach with current time
+      global.display.unset_input_focus(global.get_current_time());
+
+      // Then try with timestamp 0 as a fallback
+      global.display.unset_input_focus(0);
+
+      // Force the stage to get focus as another fallback
+      global.stage.set_key_focus(null);
+
+      this.logDebug('Applied multiple focus clearing methods');
+    } catch (e) {
+      this.logError(`Error while clearing focus: ${e}`);
+    }
   }
 
   private logInfo(message: string): void {

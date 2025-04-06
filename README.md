@@ -1,10 +1,12 @@
 # Alt-Tab Current Monitor
 
-A GNOME Shell extension that makes Alt+Tab only show windows from the current monitor.
+A GNOME Shell extension that makes Alt+Tab only show windows from the current monitor and workspace.
 
 ## Features
 
 - Makes Alt+Tab only show windows from the current monitor
+- Option to only show windows from the current workspace
+- Maintains focus on the current monitor when switching workspaces
 - Works with both window switcher and app switcher
 - Option to define "current monitor" as either:
   - The monitor where the mouse pointer is located
@@ -18,14 +20,27 @@ Visit [extensions.gnome.org](https://extensions.gnome.org) and search for "Alt-T
 
 ### Manual Installation
 1. Clone this repository
-2. Run `make pack` to create a zip file
-3. Run `make install` to install the extension
+2. Run `npm install` to install dependencies
+3. Run `npm run pack` to create a zip file
+4. Run `npm run install-extension` to install the extension
 
 ## Configuration
 
-The extension provides a simple settings dialog where you can choose how to determine the "current monitor":
+The extension provides several configuration options:
 
+### Monitor Selection
 - **Use mouse pointer monitor**: When enabled, the "current monitor" is the one where your mouse pointer is located. When disabled (default), it's the monitor with the focused window.
+
+### Window Behavior
+- **Current workspace only**: When enabled, Alt+Tab will only show windows from the current workspace.
+- **Keep focus on current monitor when switching workspaces**: Prevents focus from jumping to windows on other monitors when switching workspaces.
+
+### Debugging
+- **Enable debugging logs**: Enables detailed logging for troubleshooting issues.
+
+## Compatibility
+
+Compatible with GNOME Shell 46, 47, and 48.
 
 ## License
 
