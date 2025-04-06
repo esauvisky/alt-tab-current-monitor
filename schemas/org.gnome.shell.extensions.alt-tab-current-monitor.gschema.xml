@@ -11,5 +11,10 @@
       <summary>Current workspace only</summary>
       <description>When enabled, Alt+Tab will only show windows from the current workspace.</description>
     </key>
+    <key name="prevent-focus-on-other-displays" type="b">
+      <default>true</default>
+      <summary>Keep focus on current monitor when switching workspaces</summary>
+      <description>When enabled, switching workspaces will not change focus to windows on other monitors.</description>
+    </key>
   </schema>
 </schemalist>

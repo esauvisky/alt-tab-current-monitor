@@ -36,12 +36,20 @@ export default class AltTabCurrentMonitorPreferences extends ExtensionPreference
     });
     workspaceGroup.add(currentWorkspaceOnly);
 
+    const preventFocusOnOtherDisplays = new Adw.SwitchRow({
+      title: _('Keep focus on current monitor when switching workspaces'),
+      subtitle: _('When enabled, switching workspaces will not change focus to windows on other monitors.'),
+    });
+    workspaceGroup.add(preventFocusOnOtherDisplays);
+
     window.add(page);
 
     // @ts-ignore
     window._settings.bind('use-mouse-monitor', useMouseMonitor, 'active', Gio.SettingsBindFlags.DEFAULT);
     // @ts-ignore
     window._settings.bind('current-workspace-only', currentWorkspaceOnly, 'active', Gio.SettingsBindFlags.DEFAULT);
+    // @ts-ignore
+    window._settings.bind('prevent-focus-on-other-displays', preventFocusOnOtherDisplays, 'active', Gio.SettingsBindFlags.DEFAULT);
 
     return Promise.resolve();
   }

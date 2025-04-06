@@ -1,6 +1,6 @@
 {
   "name": "alt-tab-current-monitor",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "GNOME Shell extension that makes Alt+Tab only show/cycle windows from the current monitor",
   "type": "module",
   "private": true,
