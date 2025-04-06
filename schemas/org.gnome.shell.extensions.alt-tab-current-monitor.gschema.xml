@@ -2,14 +2,9 @@
 <schemalist>
   <schema id="org.gnome.shell.extensions.alt-tab-current-monitor" path="/org/gnome/shell/extensions/alt-tab-current-monitor/">
     <key name="use-mouse-monitor" type="b">
-      <default>false</default>
+      <default>true</default>
       <summary>Use mouse pointer monitor</summary>
       <description>When enabled, the "current monitor" is the one where your mouse pointer is located. When disabled, it's the monitor with the focused window.</description>
-    </key>
-    <key name="current-workspace-only" type="b">
-      <default>true</default>
-      <summary>Current workspace only</summary>
-      <description>When enabled, Alt+Tab will only show windows from the current workspace.</description>
     </key>
     <key name="prevent-focus-on-other-displays" type="b">
       <default>true</default>
