@@ -180,7 +180,7 @@ export default class AltTabCurrentMonitorExtension extends Extension {
     WindowManager.WindowManager.prototype.actionMoveWorkspace = function(workspace) {
       // Store current state before workspace switch
       const focusedWindowBefore = global.display.focus_window;
-      const currentMonitor = focusedWindowBefore?.get_monitor() || self.getCurrentMonitor();
+      const currentMonitor = self.getCurrentMonitor();
       const isOnAllWorkspaces = focusedWindowBefore?.is_on_all_workspaces() || false;
       const workspaceIndexBefore = global.workspace_manager.get_active_workspace_index();
 
@@ -192,12 +192,10 @@ export default class AltTabCurrentMonitorExtension extends Extension {
       self.logDebug(`Focused window monitor: ${focusedWindowBefore ? focusedWindowBefore.get_monitor() : 'none'}`);
       self.logDebug(`Window on all workspaces: ${isOnAllWorkspaces}`);
 
-      // Temporarily unfocus all windows to prevent GNOME from auto-focusing windows
-      // global.display.unset_input_focus(global.get_current_time());
-
       // Call the original workspace switching function
       self.actionMoveWorkspaceOriginal.apply(this, arguments);
 
+      // We'll handle focus after the workspace switch instead of trying to unfocus before
       self._tick().then(() => {
         const workspaceIndexAfter = global.workspace_manager.get_active_workspace_index();
         const activeWorkspace = global.workspace_manager.get_active_workspace();
@@ -244,11 +242,13 @@ export default class AltTabCurrentMonitorExtension extends Extension {
           } else {
             // Case 3: No windows on current monitor, ensure nothing is focused
             self.logWarning(`No windows on monitor ${currentMonitor}, clearing focus`);
-            global.display.unset_input_focus(global.get_current_time());
+            // More robust approach to unfocus windows
+            self._clearFocus();
           }
         } else {
           self.logError(`Couldn't find active workspace, clearing focus`);
-          global.display.unset_input_focus(global.get_current_time());
+          // More robust approach to unfocus windows
+          self._clearFocus();
         }
 
         self.logHighlight('=== WORKSPACE SWITCH END ===');
@@ -303,6 +303,10 @@ export default class AltTabCurrentMonitorExtension extends Extension {
       GLib.Source.remove(this.timeoutId);
       this.timeoutId = 0;
     }
+  }
+
+  private _clearFocus(): void {
+    global.display.unset_input_focus(0);
   }
 
   private logInfo(message: string): void {
