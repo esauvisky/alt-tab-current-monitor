@@ -10,6 +10,7 @@ import GLib from 'gi://GLib';
 export default class AltTabCurrentMonitorExtension extends Extension {
   private gsettings?: Gio.Settings;
   private originalWindowSwitcherPopupGetWindows: any = null;
+  private originalWindowCyclerPopupGetWindows: any = null;
   private useMouseMonitor: boolean = false;
   private currentWorkspaceOnly: boolean = true;
   private preventFocusOnOtherDisplays: boolean = true;
@@ -32,7 +33,7 @@ export default class AltTabCurrentMonitorExtension extends Extension {
 
     // Save original functions
     this.originalWindowSwitcherPopupGetWindows = AltTab.WindowSwitcherPopup.prototype._getWindowList;
-    const originalWindowCyclerPopupGetWindows = AltTab.WindowCyclerPopup.prototype._getWindows;
+    this.originalWindowCyclerPopupGetWindows = AltTab.WindowCyclerPopup.prototype._getWindows;
 
     // Create a reference to this extension instance for use in the overridden methods
     const self = this;
@@ -45,7 +46,7 @@ export default class AltTabCurrentMonitorExtension extends Extension {
 
     // Override WindowCyclerPopup._getWindows
     AltTab.WindowCyclerPopup.prototype._getWindows = function() {
-      const windows = originalWindowCyclerPopupGetWindows.call(this);
+      const windows = self.originalWindowCyclerPopupGetWindows.call(this);
       return self.filterWindows(windows);
     };
 
@@ -83,11 +84,10 @@ export default class AltTabCurrentMonitorExtension extends Extension {
     }
 
     // Restore WindowCyclerPopup._getWindows
-    // We don't store this in a class property since we don't need it after disable
-    const originalWindowCyclerPopupGetWindows = function() {
-      return global.display.get_tab_list(Meta.TabList.NORMAL, null);
-    };
-    AltTab.WindowCyclerPopup.prototype._getWindows = originalWindowCyclerPopupGetWindows;
+    if (this.originalWindowCyclerPopupGetWindows) {
+      AltTab.WindowCyclerPopup.prototype._getWindows = this.originalWindowCyclerPopupGetWindows;
+      this.originalWindowCyclerPopupGetWindows = null;
+    }
 
     // Restore workspace switching methods
     if (this.actionMoveWorkspaceOriginal) {
@@ -138,6 +138,7 @@ export default class AltTabCurrentMonitorExtension extends Extension {
       }
 
       // Fallback to primary monitor if no window is focused
+      log(`[alt-tab-current-monitor] No focused window, falling back to primary monitor`);
       return global.display.get_primary_monitor();
     }
   }
@@ -172,20 +173,14 @@ export default class AltTabCurrentMonitorExtension extends Extension {
   /**
    * Focus a window on the current monitor after workspace switch
    */
-  private async _focusWindowOnCurrentMonitor(): Promise<void> {
-    log(`[alt-tab-current-monitor] Focusing window on current monitor`);
-
+  private async _focusWindowOnMonitor(currentMonitor: number): Promise<void> {
     // Wait a tick for the workspace switch to complete
-    // await this._tick();
-
-    // Get the current monitor
-    const currentMonitor = this.getCurrentMonitor();
-    log(`[alt-tab-current-monitor] Current monitor: ${currentMonitor}`);
+    await this._tick();
 
     // Get the focused window
     const focusedWindow = global.display.focus_window;
-    log(`[alt-tab-current-monitor] Focused window: ${focusedWindow ?
-      `${focusedWindow.get_title()} (monitor: ${focusedWindow.get_monitor()})` : 'none'}`);
+    const focusedWindowInfo = focusedWindow ? focusedWindow.get_title() : 'none';
+    log(`[alt-tab-current-monitor] Focused window: ${focusedWindowInfo} (monitor: ${focusedWindow.get_monitor()})`);
 
     // If there's no focused window or it's on a different monitor, find a window to focus
     if (!focusedWindow || focusedWindow.get_monitor() !== currentMonitor) {
@@ -200,7 +195,7 @@ export default class AltTabCurrentMonitorExtension extends Extension {
 
       // Get windows using the same approach as AltTab
       const windows = this._getWindowsForWorkspace(activeWorkspace);
-      log(`[alt-tab-current-monitor] Total windows on active workspace: ${windows.length}`);
+      log(`[alt-tab-current-monitor] Total windows on active workspace: ${windows.length}.`);
 
       const windowsOnCurrentMonitor = windows.filter(window =>
         window.get_monitor() === currentMonitor &&
@@ -255,6 +250,7 @@ export default class AltTabCurrentMonitorExtension extends Extension {
 
   /**
    * Wait for the next tick in the event loop
+   * Stolen from https://github.com/christopher-l/focus-follows-workspace/tree/main
    */
   private _tick(): Promise<void> {
     return new Promise((resolve) => {
