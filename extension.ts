@@ -196,8 +196,9 @@ export default class AltTabCurrentMonitorExtension extends Extension {
         self.logDebug(`Focused window after: ${focusedWindowAfter ? focusedWindowAfter.get_title() : 'none'}`);
         self.logDebug(`Focused window monitor: ${focusedWindowAfter ? focusedWindowAfter.get_monitor() : 'none'}`);
 
-        // Case 1: If the previously focused window is on all workspaces, keep it focused
-        if (isOnAllWorkspaces && focusedWindowBefore) {
+        // Case 1: If the previously focused window is on all workspaces, and the current monitor
+        // is the same as the previously focused window, keep it focused
+        if (isOnAllWorkspaces && focusedWindowBefore?.get_monitor() === currentMonitor) {
           self.logSuccess(`Refocusing window that's on all workspaces: ${focusedWindowBefore.get_title()}`);
           focusedWindowBefore.activate(global.get_current_time());
           return;
