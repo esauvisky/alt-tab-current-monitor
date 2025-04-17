@@ -16,5 +16,10 @@
       <summary>Enable debugging logs</summary>
       <description>When enabled, detailed debugging information will be logged to the journal.</description>
     </key>
+    <key name="other-monitors-modifier-key" type="s">
+      <default>'Shift'</default>
+      <summary>Modifier key for switching to windows on other monitors</summary>
+      <description>When this modifier key is held while using Alt+Tab, windows from monitors other than the current one will be shown. Set to empty to disable this feature.</description>
+    </key>
   </schema>
 </schemalist>

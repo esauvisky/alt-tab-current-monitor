@@ -5,6 +5,7 @@ A GNOME Shell extension that makes Alt+Tab only show windows from the current mo
 ## Features
 
 - **Monitor-Specific Alt+Tab**: Only shows windows from your current monitor in Alt+Tab
+- **Cross-Monitor Switching**: Hold a modifier key (Shift by default) with Alt+Tab to see windows from other monitors
 - **Focus Protection**: Maintains focus on the current monitor when switching workspaces
 - **Multiple Switcher Support**: Works with both window switcher and app switcher
 - **Flexible Monitor Detection**: Choose how to determine your "current" monitor:
@@ -39,6 +40,7 @@ Visit [extensions.gnome.org](https://extensions.gnome.org) and search for "Alt-T
 
 ### Window Behavior
 - **Keep focus on current monitor when switching workspaces**: Prevents focus from jumping to windows on other monitors when switching workspaces.
+- **Modifier key for other monitors**: Hold this key (Shift by default) while using Alt+Tab to show windows from monitors other than your current one.
 
 ### Debugging
 - **Enable debugging logs**: Enables detailed logging for troubleshooting.

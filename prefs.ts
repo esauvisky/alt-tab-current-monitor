@@ -1,5 +1,6 @@
 import Adw from 'gi://Adw';
 import Gio from 'gi://Gio';
+import Gtk from 'gi://Gtk';
 import { ExtensionPreferences, gettext as _ } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
 export default class AltTabCurrentMonitorPreferences extends ExtensionPreferences {
@@ -36,6 +37,44 @@ export default class AltTabCurrentMonitorPreferences extends ExtensionPreference
       subtitle: _('When enabled, switching workspaces will not change focus to windows on other monitors.'),
     });
     behaviorGroup.add(preventFocusOnOtherDisplays);
+
+    // Add modifier key dropdown for other monitors
+    const modifierKeys = [
+      ['', _('Disabled')],
+      ['Shift', _('Shift')],
+      ['Control', _('Control')],
+      ['Alt', _('Alt')],
+      ['Super', _('Super')],
+      ['Hyper', _('Hyper')],
+      ['Caps Lock', _('Caps Lock')],
+      ['Meta', _('Meta')],
+    ];
+
+    const otherMonitorsModifierKey = new Adw.ComboRow({
+      title: _('Modifier key for other monitors'),
+      subtitle: _('Hold this key while using Alt+Tab to show windows from other monitors. Set to "Disabled" to turn off this feature.'),
+      model: new Gtk.StringList({
+        strings: modifierKeys.map(([_, label]) => label)
+      }),
+    });
+    behaviorGroup.add(otherMonitorsModifierKey);
+
+    // Set the initial value
+    // @ts-ignore
+    const currentModifier = window._settings.get_string('other-monitors-modifier-key');
+    const modifierIndex = modifierKeys.findIndex(([value, _]) => value === currentModifier);
+    if (modifierIndex !== -1) {
+      otherMonitorsModifierKey.selected = modifierIndex;
+    }
+
+    // Connect the signal
+    otherMonitorsModifierKey.connect('notify::selected', () => {
+      const selected = otherMonitorsModifierKey.selected;
+      if (selected >= 0 && selected < modifierKeys.length) {
+        // @ts-ignore
+        window._settings.set_string('other-monitors-modifier-key', modifierKeys[selected][0]);
+      }
+    });
 
     // Add debugging group
     const debuggingGroup = new Adw.PreferencesGroup({

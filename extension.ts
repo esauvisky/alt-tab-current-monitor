@@ -6,6 +6,7 @@ import Mtk from 'gi://Mtk';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as WindowManager from 'resource:///org/gnome/shell/ui/windowManager.js';
 import GLib from 'gi://GLib';
+import Clutter from 'gi://Clutter';
 
 export default class AltTabCurrentMonitorExtension extends Extension {
   private gsettings?: Gio.Settings;
@@ -14,6 +15,7 @@ export default class AltTabCurrentMonitorExtension extends Extension {
   private useMouseMonitor: boolean = true;
   private preventFocusOnOtherDisplays: boolean = true;
   private enableDebugging: boolean = false;
+  private otherMonitorsModifierKey: string = 'Control';
   private settingsChangedId: number[] = [];
   private timeoutId: number = 0;
 
@@ -34,11 +36,13 @@ export default class AltTabCurrentMonitorExtension extends Extension {
     this.useMouseMonitor = this.gsettings.get_boolean('use-mouse-monitor');
     this.preventFocusOnOtherDisplays = this.gsettings.get_boolean('prevent-focus-on-other-displays');
     this.enableDebugging = this.gsettings.get_boolean('enable-debugging');
+    this.otherMonitorsModifierKey = this.gsettings.get_string('other-monitors-modifier-key');
 
     this.logInfo('Extension enabled with settings:');
     this.logInfo(`  useMouseMonitor: ${this.useMouseMonitor}`);
     this.logInfo(`  preventFocusOnOtherDisplays: ${this.preventFocusOnOtherDisplays}`);
     this.logInfo(`  enableDebugging: ${this.enableDebugging}`);
+    this.logInfo(`  otherMonitorsModifierKey: ${this.otherMonitorsModifierKey}`);
 
     // Save original functions
     this.originalWindowSwitcherPopupGetWindows = AltTab.WindowSwitcherPopup.prototype._getWindowList;
@@ -83,6 +87,13 @@ export default class AltTabCurrentMonitorExtension extends Extension {
       })
     );
 
+    this.settingsChangedId.push(
+      this.gsettings.connect('changed::other-monitors-modifier-key', () => {
+        this.otherMonitorsModifierKey = this.gsettings!.get_string('other-monitors-modifier-key');
+        this.logInfo(`Setting changed: otherMonitorsModifierKey = ${this.otherMonitorsModifierKey}`);
+      })
+    );
+
     // Set up workspace switching handlers if enabled
     if (this.preventFocusOnOtherDisplays) {
       this._setupWorkspaceSwitchHandlers();
@@ -123,15 +134,57 @@ export default class AltTabCurrentMonitorExtension extends Extension {
   }
 
   filterWindows(windows: Meta.Window[]): Meta.Window[] {
-    // Filter by monitor
+    // Get the current state of the modifier key
+    const modifierState = global.get_pointer()[2];
+    const modifierActive = this.isModifierActive(modifierState);
+
+    // Get the current monitor
     const currentMonitor = this.getCurrentMonitor();
-    let filtered = windows.filter(window => window.get_monitor() === currentMonitor);
 
     // Always filter by workspace
     const activeWorkspace = global.workspace_manager.get_active_workspace();
-    filtered = filtered.filter(window => window.get_workspace() === activeWorkspace);
+    let filtered = windows.filter(window => window.get_workspace() === activeWorkspace);
+
+    // If the modifier key is active and configured, show windows from other monitors
+    if (modifierActive && this.otherMonitorsModifierKey) {
+      this.logDebug(`Modifier key (${this.otherMonitorsModifierKey}) is active, showing windows from other monitors`);
+      filtered = filtered.filter(window => window.get_monitor() !== currentMonitor);
+    } else {
+      // Default behavior: only show windows from the current monitor
+      filtered = filtered.filter(window => window.get_monitor() === currentMonitor);
+    }
 
     return filtered;
+  }
+
+  /**
+   * Check if the configured modifier key is active
+   */
+  private isModifierActive(modifierState: number): boolean {
+    // Map modifier key names to their mask values
+    const modifierMap: {[key: string]: number} = {
+      'Shift': Clutter.ModifierType.SHIFT_MASK,
+      'Control': Clutter.ModifierType.CONTROL_MASK,
+      'Alt': Clutter.ModifierType.MOD1_MASK,
+      'Super': Clutter.ModifierType.SUPER_MASK,
+      'Hyper': Clutter.ModifierType.HYPER_MASK,
+      'Caps Lock': Clutter.ModifierType.LOCK_MASK,
+      'Meta': Clutter.ModifierType.META_MASK,
+    };
+
+    this.logDebug(`Modifier state: ${modifierState} (${modifierMap[modifierState]}). Preference: ${this.otherMonitorsModifierKey}`);
+    if (!this.otherMonitorsModifierKey || this.otherMonitorsModifierKey === '') {
+      return false;
+    }
+
+
+    const mask = modifierMap[this.otherMonitorsModifierKey];
+    if (mask === undefined) {
+      this.logWarning(`Unknown modifier key: ${this.otherMonitorsModifierKey}`);
+      return false;
+    }
+
+    return (modifierState & mask) !== 0;
   }
 
   getCurrentMonitor(): number {
