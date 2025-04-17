@@ -277,7 +277,7 @@ export default class AltTabCurrentMonitorExtension extends Extension {
   private _tick(): Promise<void> {
     return new Promise((resolve) => {
       this._clearTimeout();
-      this.timeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 5, () => {
+      this.timeoutId = GLib.timeout_add(GLib.PRIORITY_LOW, 0, () => {
         this.timeoutId = 0;
         resolve();
         return GLib.SOURCE_REMOVE;
